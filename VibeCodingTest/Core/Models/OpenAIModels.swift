@@ -36,13 +36,17 @@ struct ImageURL: Codable {
 }
 
 // MARK: - Response Models
-//struct OpenAIResponse: Codable {
-//    let choices: [Choice]
-//    
-//    struct Choice: Codable {
-//        let message: Message
-//    }
-//}
+struct OpenAIResponse: Codable {
+    let choices: [Choice]
+    
+    struct Choice: Codable {
+        let message: ResponseMessage
+    }
+    
+    struct ResponseMessage: Codable {
+        let content: String
+    }
+}
 
 // MARK: - Factory Methods
 extension OpenAIRequest {
@@ -50,17 +54,17 @@ extension OpenAIRequest {
         let textContent = Content(
             type: "text",
             text: """
-            Analyze this food image and provide the following information in valid JSON format:
+            You are a food analysis expert. Please analyze this food image and provide the following information in valid JSON format:
             {
-                "ingredients": ["list of ingredients"],
-                "totalCalories": number,
+                "ingredients": ["list of visible ingredients"],
+                "totalCalories": estimated total calories as a number,
                 "nutritionalInfo": {
-                    "protein": number,
-                    "carbs": number,
-                    "fat": number
+                    "protein": estimated grams of protein,
+                    "carbs": estimated grams of carbohydrates,
+                    "fat": estimated grams of fat
                 }
             }
-            Be precise with measurements and ensure the response is valid JSON.
+            Be precise with measurements and ensure the response is valid JSON. If you can't see certain details clearly, provide your best estimate based on similar foods.
             """,
             imageUrl: nil
         )
@@ -80,7 +84,7 @@ extension OpenAIRequest {
         )
         
         return OpenAIRequest(
-            model: "gpt-4-vision-preview",
+            model: "gpt-4o",
             messages: [message],
             maxTokens: 1000,
             temperature: 0.7
