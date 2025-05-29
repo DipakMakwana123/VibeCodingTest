@@ -24,8 +24,8 @@ class CameraViewModel: NSObject, ObservableObject {
     
     deinit {
         setupTask?.cancel()
-        Task {
-            await stopCameraSession()
+        Task { [weak self] in
+            await self?.stopCameraSession()
         }
     }
     
@@ -45,10 +45,13 @@ class CameraViewModel: NSObject, ObservableObject {
             setupCamera()
         case .notDetermined:
             print("Camera authorization not determined, requesting...")
-            Task {
-                if await requestCameraAccess() {
-                    isCameraAuthorized = true
-                    setupCamera()
+            Task { [weak self] in
+                guard let self = self else { return }
+                if await self.requestCameraAccess() {
+                    await MainActor.run {
+                        self.isCameraAuthorized = true
+                        self.setupCamera()
+                    }
                 }
             }
         case .denied, .restricted:
@@ -96,8 +99,8 @@ class CameraViewModel: NSObject, ObservableObject {
             session.commitConfiguration()
             isConfigured = true
             
-            Task {
-                session.startRunning()
+            Task { [weak self] in
+                self?.session.startRunning()
             }
             
             print("Camera setup completed successfully")
@@ -109,7 +112,7 @@ class CameraViewModel: NSObject, ObservableObject {
     func switchCamera() {
         print("Switching camera...")
         guard let currentInput = deviceInput else { return }
-              let currentPosition = currentInput.device.position
+        let currentPosition = currentInput.device.position
         
         let newPosition: AVCaptureDevice.Position = currentPosition == .back ? .front : .back
         guard let newDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
@@ -143,7 +146,7 @@ class CameraViewModel: NSObject, ObservableObject {
     func openSettings() {
         print("Opening app settings...")
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
-            Task { @MainActor in
+            Task {  @MainActor in
                 await UIApplication.shared.open(settingsUrl)
             }
         }
