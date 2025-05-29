@@ -1,48 +1,39 @@
 import Foundation
-import os.log
 
-class FoodHistoryManager {
+final class FoodHistoryManager {
     static let shared = FoodHistoryManager()
-    private let logger = Logger(subsystem: "com.vibe.foodcalories", category: "FoodHistoryManager")
-    
     private let userDefaults = UserDefaults.standard
-    private let recordsKey = "food_records"
+    private let recordsKey = "foodRecords"
     
     private init() {}
     
     func addRecord(_ record: FoodRecord) {
-        logger.debug("Adding new food record...")
+        print("Adding new food record...")
         var records = getAllRecords()
         records.append(record)
-        
-        do {
-            let encodedData = try JSONEncoder().encode(records)
-            userDefaults.set(encodedData, forKey: recordsKey)
-            logger.info("Food record added successfully")
-        } catch {
-            logger.error("Failed to save food record: \(error.localizedDescription)")
-        }
+        saveRecords(records)
+        print("Food record added successfully")
     }
     
     func getAllRecords() -> [FoodRecord] {
-        logger.debug("Fetching all food records...")
+        print("Fetching all food records...")
         guard let data = userDefaults.data(forKey: recordsKey) else {
-            logger.info("No food records found")
+            print("No food records found")
             return []
         }
         
         do {
             let records = try JSONDecoder().decode([FoodRecord].self, from: data)
-            logger.info("Retrieved \(records.count) food records")
+            print("Retrieved \(records.count) food records")
             return records
         } catch {
-            logger.error("Failed to decode food records: \(error.localizedDescription)")
+            print("Error decoding food records: \(error.localizedDescription)")
             return []
         }
     }
     
     func getRecords(for date: Date) -> [FoodRecord] {
-        logger.debug("Fetching food records for date: \(date)")
+        print("Fetching food records for date: \(date)")
         let calendar = Calendar.current
         return getAllRecords().filter { record in
             calendar.isDate(record.date, inSameDayAs: date)
@@ -50,23 +41,28 @@ class FoodHistoryManager {
     }
     
     func deleteRecord(_ record: FoodRecord) {
-        logger.debug("Deleting food record...")
+        print("Deleting food record...")
         var records = getAllRecords()
         records.removeAll { $0.id == record.id }
-        
-        do {
-            let encodedData = try JSONEncoder().encode(records)
-            userDefaults.set(encodedData, forKey: recordsKey)
-            logger.info("Food record deleted successfully")
-        } catch {
-            logger.error("Failed to delete food record: \(error.localizedDescription)")
-        }
+        saveRecords(records)
+        print("Food record deleted successfully")
     }
     
     func clearAllRecords() {
-        logger.debug("Clearing all food records...")
+        print("Clearing all food records...")
         userDefaults.removeObject(forKey: recordsKey)
-        logger.info("All food records cleared")
+        print("All food records cleared")
+    }
+    
+    private func saveRecords(_ records: [FoodRecord]) {
+        print("Saving food records...")
+        do {
+            let data = try JSONEncoder().encode(records)
+            userDefaults.set(data, forKey: recordsKey)
+            print("Food records saved successfully")
+        } catch {
+            print("Error saving food records: \(error.localizedDescription)")
+        }
     }
 }
 

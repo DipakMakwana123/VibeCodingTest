@@ -1,11 +1,8 @@
 import AVFoundation
 import SwiftUI
-import os.log
 
 @MainActor
 class CameraViewModel: NSObject, ObservableObject {
-    private let logger = Logger(subsystem: "com.vibe.foodcalories", category: "CameraViewModel")
-    
     @Published var session = AVCaptureSession()
     @Published var isSessionRunning = false
     @Published var error: Error?
@@ -40,14 +37,14 @@ class CameraViewModel: NSObject, ObservableObject {
     }
     
     func checkCameraPermission() {
-        logger.debug("Checking camera permission...")
+        print("Checking camera permission...")
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            logger.info("Camera access authorized")
+            print("Camera access authorized")
             isCameraAuthorized = true
             setupCamera()
         case .notDetermined:
-            logger.debug("Camera authorization not determined, requesting...")
+            print("Camera authorization not determined, requesting...")
             Task {
                 if await requestCameraAccess() {
                     isCameraAuthorized = true
@@ -55,10 +52,10 @@ class CameraViewModel: NSObject, ObservableObject {
                 }
             }
         case .denied, .restricted:
-            logger.warning("Camera access denied or restricted")
+            print("Camera access denied or restricted")
             showPermissionAlert = true
         @unknown default:
-            logger.error("Unknown camera authorization status")
+            print("Unknown camera authorization status")
         }
     }
     
@@ -73,14 +70,14 @@ class CameraViewModel: NSObject, ObservableObject {
     func setupCamera() {
         guard !isConfigured else { return }
         
-        logger.debug("Setting up camera session...")
+        print("Setting up camera session...")
         session.beginConfiguration()
         
         // Add video input
         guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
                                                       for: .video,
                                                       position: position) else {
-            logger.error("Failed to get camera device")
+            print("Failed to get camera device")
             return
         }
         
@@ -103,14 +100,14 @@ class CameraViewModel: NSObject, ObservableObject {
                 session.startRunning()
             }
             
-            logger.info("Camera setup completed successfully")
+            print("Camera setup completed successfully")
         } catch {
-            logger.error("Error setting up camera: \(error.localizedDescription)")
+            print("Error setting up camera: \(error.localizedDescription)")
         }
     }
     
     func switchCamera() {
-        logger.debug("Switching camera...")
+        print("Switching camera...")
         guard let currentInput = deviceInput else { return }
               let currentPosition = currentInput.device.position
         
@@ -129,22 +126,22 @@ class CameraViewModel: NSObject, ObservableObject {
                 deviceInput = newInput
             }
             session.commitConfiguration()
-            logger.info("Camera switched successfully")
+            print("Camera switched successfully")
         } catch {
-            logger.error("Error switching camera: \(error.localizedDescription)")
+            print("Error switching camera: \(error.localizedDescription)")
             session.addInput(currentInput)
             session.commitConfiguration()
         }
     }
     
     func capturePhoto() {
-        logger.debug("Capturing photo...")
+        print("Capturing photo...")
         let settings = AVCapturePhotoSettings()
         photoOutput.capturePhoto(with: settings, delegate: self)
     }
     
     func openSettings() {
-        logger.debug("Opening app settings...")
+        print("Opening app settings...")
         if let settingsUrl = URL(string: UIApplication.openSettingsURLString) {
             Task { @MainActor in
                 await UIApplication.shared.open(settingsUrl)
@@ -156,16 +153,16 @@ class CameraViewModel: NSObject, ObservableObject {
 extension CameraViewModel: @preconcurrency AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         if let error = error {
-            logger.error("Error capturing photo: \(error.localizedDescription)")
+            print("Error capturing photo: \(error.localizedDescription)")
             return
         }
         
         guard let imageData = photo.fileDataRepresentation() else {
-            logger.error("Failed to get image data")
+            print("Failed to get image data")
             return
         }
         
-        logger.info("Photo captured successfully")
+        print("Photo captured successfully")
         self.capturedImageData = imageData
         self.showingAnalysis = true
     }

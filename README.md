@@ -21,7 +21,11 @@ An iOS app that analyzes food calories from photos using OpenAI's Vision API.
 
 1. Clone the repository
 2. Open `VibeCodingTest.xcodeproj` in Xcode
-3. Replace `YOUR_OPENAI_API_KEY` in `ContentView.swift` with your actual OpenAI API key
+3. Add your OpenAI API key to the project:
+   - In Xcode, go to your target's Build Settings
+   - Find "User-Defined" settings
+   - Add a new setting called `OPENAI_API_KEY`
+   - Set its value to your OpenAI API key
 4. Build and run the project
 
 ## Architecture

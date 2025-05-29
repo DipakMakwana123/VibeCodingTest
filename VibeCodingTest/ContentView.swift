@@ -6,12 +6,9 @@
 //
 
 import SwiftUI
-import os
 
 struct ContentView: View {
     @State private var selectedTab = 0
-    
-    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VibeCodingTest", category: "ContentView")
     
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -27,7 +24,7 @@ struct ContentView: View {
             // History Tab
             HistoryView()
                 .tabItem {
-                    Label("History", systemImage: "calendar")
+                    Label("History", systemImage: "clock")
                 }
                 .tag(1)
         }

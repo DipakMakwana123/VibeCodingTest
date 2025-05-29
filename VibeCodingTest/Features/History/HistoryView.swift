@@ -15,11 +15,11 @@ struct HistoryView: View {
                 )
                 .datePickerStyle(.graphical)
                 .onChange(of: selectedDate) { newDate in
-                    viewModel.loadRecords(for: newDate)
+                    viewModel.loadRecords()
                 }
                 
                 // Records List
-                if viewModel.records.isEmpty {
+                if viewModel.foodRecords.isEmpty {
                     if #available(iOS 17.0, *) {
                         ContentUnavailableView(
                             "No Records",
@@ -27,15 +27,27 @@ struct HistoryView: View {
                             description: Text("No food records for this date")
                         )
                     } else {
-                        // Fallback on earlier versions
+                        VStack {
+                            Image(systemName: "fork.knife.circle")
+                                .font(.system(size: 50))
+                                .foregroundColor(.secondary)
+                            Text("No Records")
+                                .font(.headline)
+                            Text("No food records for this date")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
                     }
                 } else {
                     List {
-                        ForEach(viewModel.records) { record in
+                        ForEach(viewModel.foodRecords) { record in
                             FoodRecordRow(record: record)
                         }
                         .onDelete { indexSet in
-                            viewModel.deleteRecords(at: indexSet)
+                            if let index = indexSet.first {
+                                viewModel.deleteRecord(viewModel.foodRecords[index])
+                            }
                         }
                     }
                 }
@@ -46,7 +58,7 @@ struct HistoryView: View {
             }
         }
         .task {
-            viewModel.loadRecords(for: selectedDate)
+            viewModel.loadRecords()
         }
     }
 }
