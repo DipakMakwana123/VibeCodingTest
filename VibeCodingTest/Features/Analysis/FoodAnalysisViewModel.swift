@@ -7,6 +7,7 @@ class FoodAnalysisViewModel: ObservableObject {
     @Published var isAnalyzing = false
     @Published var error: Error?
     @Published var showError = false
+    @Published var analysis: FoodAnalysis?
     
     let imageData: Data
     private var openAIService: OpenAIService?
@@ -28,6 +29,69 @@ class FoodAnalysisViewModel: ObservableObject {
         }
     }
     
+    private func compressImage(_ data: Data, maxSizeKB: Int = 1024) -> Data {
+        print("Starting image compression. Original size: \(Double(data.count) / 1024) KB")
+        
+        guard let image = UIImage(data: data) else {
+            print("Failed to create UIImage from data")
+            return data
+        }
+        
+        // Start with original quality
+        var compression: CGFloat = 1.0
+        var imageData = image.jpegData(compressionQuality: compression) ?? data
+        
+        // Maximum number of iterations to prevent infinite loop
+        let maxIterations = 10
+        var currentIteration = 0
+        
+        // Target size in bytes
+        let maxBytes = maxSizeKB * 1024
+        
+        // Binary search for appropriate compression value
+        var minCompression: CGFloat = 0.0
+        var maxCompression: CGFloat = 1.0
+        
+        while imageData.count > maxBytes && currentIteration < maxIterations {
+            compression = (minCompression + maxCompression) / 2
+            
+            if let compressedData = image.jpegData(compressionQuality: compression) {
+                if compressedData.count > maxBytes {
+                    maxCompression = compression
+                } else {
+                    minCompression = compression
+                }
+                imageData = compressedData
+            }
+            
+            currentIteration += 1
+            print("Compression iteration \(currentIteration): size = \(Double(imageData.count) / 1024) KB, quality = \(compression)")
+        }
+        
+        // If still too large, resize the image
+        if imageData.count > maxBytes {
+            print("Compression alone insufficient, attempting resize")
+            let scale = sqrt(Double(maxBytes) / Double(imageData.count))
+            let newSize = CGSize(
+                width: image.size.width * scale,
+                height: image.size.height * scale
+            )
+            
+            UIGraphicsBeginImageContextWithOptions(newSize, false, image.scale)
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+            let resizedImage = UIGraphicsGetImageFromCurrentImageContext()
+            UIGraphicsEndImageContext()
+            
+            if let resizedData = resizedImage?.jpegData(compressionQuality: compression) {
+                imageData = resizedData
+                print("Image resized. Final size: \(Double(imageData.count) / 1024) KB")
+            }
+        }
+        
+        print("Compression complete. Final size: \(Double(imageData.count) / 1024) KB")
+        return imageData
+    }
+    
     func analyzeFood() async {
         guard let openAIService = openAIService else {
             print("Cannot analyze food: OpenAI service not initialized")
@@ -37,9 +101,13 @@ class FoodAnalysisViewModel: ObservableObject {
         isAnalyzing = true
         print("Starting food analysis...")
         
+        // Compress image before analysis
+        let compressedImageData = compressImage(imageData)
+        
         do {
-            let analysis = try await openAIService.analyzeFood(imageData: imageData)
+            let analysis = try await openAIService.analyzeFood(imageData: compressedImageData)
             await MainActor.run {
+                self.analysis = analysis
                 self.ingredients = analysis.ingredients
                 print("Food analysis completed successfully with \(self.ingredients.count) ingredients")
             }
@@ -58,11 +126,16 @@ class FoodAnalysisViewModel: ObservableObject {
     
     func saveAnalysis() {
         print("Saving food analysis...")
+        guard let analysis = analysis else {
+            print("Cannot save: No analysis data available")
+            return
+        }
+        
         let foodRecord = FoodRecord(
             date: Date(),
             ingredients: ingredients,
-            totalCalories: 0,
-            nutritionalInfo: FoodAnalysis.NutritionalInfo(protein: 0, carbs: 0, fat: 0),
+            totalCalories: analysis.totalCalories,
+            nutritionalInfo: analysis.nutritionalInfo,
             imageData: imageData
         )
         

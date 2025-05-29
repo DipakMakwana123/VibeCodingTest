@@ -3,6 +3,7 @@ import Foundation
 @MainActor
 class HistoryViewModel: ObservableObject {
     @Published var foodRecords: [FoodRecord] = []
+    @Published var selectedDate = Date()
     private let historyManager = FoodHistoryManager.shared
     
     init() {
@@ -10,8 +11,8 @@ class HistoryViewModel: ObservableObject {
     }
     
     func loadRecords() {
-        print("Loading food records...")
-        foodRecords = historyManager.getAllRecords()
+        print("Loading food records for date: \(selectedDate)")
+        foodRecords = historyManager.getRecords(for: selectedDate)
         print("Loaded \(foodRecords.count) food records")
     }
     

@@ -24,14 +24,14 @@ struct CameraView: View {
                     }) {
                         Image(systemName: "arrow.triangle.2.circlepath.camera")
                             .font(.system(size: 24))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.systemBackground)
                     }
                     
                     Button(action: {
                         viewModel.capturePhoto()
                     }) {
                         Circle()
-                            .strokeBorder(Color.white, lineWidth: 3)
+                            .strokeBorder(Color.systemBackground, lineWidth: 3)
                             .frame(width: 70, height: 70)
                     }
                     
@@ -40,12 +40,13 @@ struct CameraView: View {
                     }) {
                         Image(systemName: "photo.on.rectangle")
                             .font(.system(size: 24))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.systemBackground)
                     }
                 }
                 .padding(.bottom, 30)
             }
         }
+        .background(Color.black) // Camera background should always be black
         .onAppear {
             viewModel.checkCameraPermission()
         }

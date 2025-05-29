@@ -2,7 +2,6 @@ import SwiftUI
 
 struct HistoryView: View {
     @StateObject private var viewModel = HistoryViewModel()
-    @State private var selectedDate = Date()
     
     var body: some View {
         NavigationView {
@@ -10,13 +9,15 @@ struct HistoryView: View {
                 // Calendar View
                 DatePicker(
                     "Select Date",
-                    selection: $selectedDate,
+                    selection: $viewModel.selectedDate,
                     displayedComponents: [.date]
                 )
                 .datePickerStyle(.graphical)
-                .onChange(of: selectedDate) { newDate in
+                .onChange(of: viewModel.selectedDate) { newDate in
                     viewModel.loadRecords()
                 }
+                .padding()
+                .background(Color.systemBackground)
                 
                 // Records List
                 if viewModel.foodRecords.isEmpty {
@@ -26,23 +27,28 @@ struct HistoryView: View {
                             systemImage: "fork.knife.circle",
                             description: Text("No food records for this date")
                         )
+                        .background(Color.systemBackground)
                     } else {
                         VStack {
                             Image(systemName: "fork.knife.circle")
                                 .font(.system(size: 50))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color.secondaryLabel)
                             Text("No Records")
                                 .font(.headline)
+                                .foregroundColor(Color.label)
                             Text("No food records for this date")
                                 .font(.subheadline)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(Color.secondaryLabel)
                         }
                         .padding()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.systemBackground)
                     }
                 } else {
                     List {
                         ForEach(viewModel.foodRecords) { record in
                             FoodRecordRow(record: record)
+                                .listRowBackground(Color.secondarySystemBackground)
                         }
                         .onDelete { indexSet in
                             if let index = indexSet.first {
@@ -50,8 +56,11 @@ struct HistoryView: View {
                             }
                         }
                     }
+                    .listStyle(.insetGrouped)
+                    .background(Color.systemGroupedBackground)
                 }
             }
+            .background(Color.systemGroupedBackground)
             .navigationTitle("Food History")
             .toolbar {
                 EditButton()
@@ -80,11 +89,12 @@ struct FoodRecordRow: View {
                 VStack(alignment: .leading) {
                     Text(record.ingredients.joined(separator: ", "))
                         .font(.headline)
+                        .foregroundColor(Color.label)
                         .lineLimit(1)
                     
                     Text("\(Int(record.totalCalories)) calories")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Color.secondaryLabel)
                 }
             }
             
@@ -108,10 +118,11 @@ struct NutrientView: View {
         VStack {
             Text(label)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(Color.secondaryLabel)
             Text("\(Int(value))g")
                 .font(.callout)
                 .bold()
+                .foregroundColor(Color.label)
         }
     }
 }
