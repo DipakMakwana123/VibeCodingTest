@@ -14,6 +14,10 @@ struct ContentView: View {
     
     private var openAIApiKey: String {
         do {
+            // Get API key from environment variable or secure storage
+            if let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] {
+                return apiKey
+            }
             return try ConfigurationManager.shared.openAIAPIKey
         } catch {
             logger.error("Failed to get OpenAI API key: \(error.localizedDescription)")
