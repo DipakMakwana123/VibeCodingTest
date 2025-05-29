@@ -5,9 +5,10 @@ actor OpenAIService {
     private let baseURL = "https://api.openai.com/v1/chat/completions"
     private let apiVersion = "2024-03-01"  // Latest API version
     
-    init(apiKey: String) {
-        self.apiKey = apiKey
-        print("OpenAIService initialized with API key: \(apiKey.prefix(8))...")
+    init() throws {
+        // Read API key from Config.xcconfig
+        self.apiKey = try Configuration.validateOpenAIAPIKey()
+        print("OpenAIService initialized with API key configuration")
     }
     
     func analyzeFood(imageData: Data) async throws -> FoodAnalysis {

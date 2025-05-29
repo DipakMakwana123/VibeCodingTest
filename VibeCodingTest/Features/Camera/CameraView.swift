@@ -4,8 +4,8 @@ import AVFoundation
 struct CameraView: View {
     @StateObject private var viewModel: CameraViewModel
     
-    init(apiKey: String) {
-        _viewModel = StateObject(wrappedValue: CameraViewModel(apiKey: apiKey))
+    init() {
+        _viewModel = StateObject(wrappedValue: CameraViewModel())
     }
     
     var body: some View {
@@ -59,7 +59,7 @@ struct CameraView: View {
         }
         .sheet(isPresented: $viewModel.showingAnalysis) {
             if let imageData = viewModel.capturedImageData {
-                FoodAnalysisView(imageData: imageData, apiKey: viewModel.apiKey)
+                FoodAnalysisView(imageData: imageData)
             }
         }
     }
@@ -82,5 +82,5 @@ struct CameraPreviewView: UIViewRepresentable {
 }
 
 #Preview {
-    CameraView(apiKey: "preview-key")
+    CameraView()
 } 

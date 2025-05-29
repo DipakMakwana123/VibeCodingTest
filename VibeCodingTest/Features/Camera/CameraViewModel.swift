@@ -7,21 +7,36 @@ class CameraViewModel: NSObject, ObservableObject {
     private let logger = Logger(subsystem: "com.vibe.foodcalories", category: "CameraViewModel")
     
     @Published var session = AVCaptureSession()
+    @Published var isSessionRunning = false
+    @Published var error: Error?
     @Published var showPermissionAlert = false
-    @Published var showingAnalysis = false
     @Published var capturedImageData: Data?
+    @Published var showingAnalysis = false
     
     private var deviceInput: AVCaptureDeviceInput?
     private let photoOutput = AVCapturePhotoOutput()
+    private var position: AVCaptureDevice.Position = .back
     private var isCameraAuthorized = false
     private var isConfigured = false
-    private let openAIService: OpenAIService
-    let apiKey: String
-    
-    init(apiKey: String) {
-        self.apiKey = apiKey
-        self.openAIService = OpenAIService(apiKey: apiKey)
+    private var setupTask: Task<Void, Never>?
+
+    override init() {
         super.init()
+        checkCameraPermission()
+    }
+    
+    deinit {
+        setupTask?.cancel()
+        Task {
+            await stopCameraSession()
+        }
+    }
+    
+    private func stopCameraSession() {
+        if session.isRunning {
+            session.stopRunning()
+            isSessionRunning = false
+        }
     }
     
     func checkCameraPermission() {
@@ -44,7 +59,6 @@ class CameraViewModel: NSObject, ObservableObject {
             showPermissionAlert = true
         @unknown default:
             logger.error("Unknown camera authorization status")
-            break
         }
     }
     
@@ -65,7 +79,7 @@ class CameraViewModel: NSObject, ObservableObject {
         // Add video input
         guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera,
                                                       for: .video,
-                                                      position: .back) else {
+                                                      position: position) else {
             logger.error("Failed to get camera device")
             return
         }

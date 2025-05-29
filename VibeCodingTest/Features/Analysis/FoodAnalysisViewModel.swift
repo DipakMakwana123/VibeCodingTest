@@ -1,72 +1,73 @@
 import Foundation
-import os.log
+import UIKit
 
 @MainActor
 class FoodAnalysisViewModel: ObservableObject {
-    private let logger = Logger(subsystem: "com.vibe.foodcalories", category: "FoodAnalysisViewModel")
-    private let openAIService: OpenAIService
+    @Published var ingredients: [String] = []
+    @Published var isAnalyzing = false
+    @Published var error: Error?
+    @Published var showError = false
     
     let imageData: Data
+    private var openAIService: OpenAIService?
+    private let historyManager = FoodHistoryManager.shared
     
-    @Published var analysisState: AnalysisState = .loading
-    @Published var ingredients: [String] = []
-    @Published var totalCalories: Double = 0
-    @Published var nutritionalInfo = NutritionalInfo()
-    
-    init(imageData: Data, apiKey: String) {
+    init(imageData: Data) {
         self.imageData = imageData
-        self.openAIService = OpenAIService(apiKey: apiKey)
-        logger.debug("FoodAnalysisViewModel initialized with image size: \(imageData.count) bytes")
+        initializeService()
+        print("FoodAnalysisViewModel initialized with image size: \(imageData.count) bytes")
+    }
+    
+    private func initializeService() {
+        do {
+            self.openAIService = try OpenAIService()
+        } catch {
+            self.error = error
+            self.showError = true
+            print("Error initializing OpenAI service: \(error.localizedDescription)")
+        }
     }
     
     func analyzeFood() async {
-        analysisState = .loading
-        logger.debug("Starting food analysis...")
+        guard let openAIService = openAIService else {
+            print("Cannot analyze food: OpenAI service not initialized")
+            return
+        }
+        
+        isAnalyzing = true
+        print("Starting food analysis...")
         
         do {
             let analysis = try await openAIService.analyzeFood(imageData: imageData)
-            
-            // Update the UI with the analysis results
-            ingredients = analysis.ingredients
-            totalCalories = analysis.totalCalories
-            nutritionalInfo = NutritionalInfo(
-                protein: analysis.nutritionalInfo.protein,
-                carbs: analysis.nutritionalInfo.carbs,
-                fat: analysis.nutritionalInfo.fat
-            )
-            
-            analysisState = .success
-            logger.info("Food analysis completed successfully with \(self.ingredients.count) ingredients")
-        } catch let error as NetworkError {
-            logger.error("Network error during analysis: \(error.localizedDescription)")
-            analysisState = .error(message: error.localizedDescription)
-        } catch let error as ParsingError {
-            logger.error("Parsing error during analysis: \(error.localizedDescription)")
-            analysisState = .error(message: error.localizedDescription)
+            await MainActor.run {
+                self.ingredients = analysis.ingredients
+                print("Food analysis completed successfully with \(self.ingredients.count) ingredients")
+            }
         } catch {
-            logger.error("Unexpected error during analysis: \(error.localizedDescription)")
-            analysisState = .error(message: "An unexpected error occurred. Please try again.")
+            await MainActor.run {
+                self.error = error
+                self.showError = true
+                print("Error during analysis: \(error.localizedDescription)")
+            }
+        }
+        
+        await MainActor.run {
+            isAnalyzing = false
         }
     }
     
     func saveAnalysis() {
-        logger.debug("Saving food analysis...")
-        // Create a FoodRecord
-        let record = FoodRecord(
+        print("Saving food analysis...")
+        let foodRecord = FoodRecord(
             date: Date(),
             ingredients: ingredients,
-            totalCalories: totalCalories,
-            nutritionalInfo: FoodAnalysis.NutritionalInfo(
-                protein: nutritionalInfo.protein,
-                carbs: nutritionalInfo.carbs,
-                fat: nutritionalInfo.fat
-            ),
+            totalCalories: 0,
+            nutritionalInfo: FoodAnalysis.NutritionalInfo(protein: 0, carbs: 0, fat: 0),
             imageData: imageData
         )
         
-        // Save to FoodHistoryManager
-        FoodHistoryManager.shared.addRecord(record)
-        logger.info("Food analysis saved successfully")
+        historyManager.addRecord(foodRecord)
+        print("Food analysis saved successfully")
     }
 }
 

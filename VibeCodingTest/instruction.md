@@ -55,7 +55,6 @@ You are building an AI app that take pic of food and analyses/log calories Every
   - Prefer let over var
   - Protocol extensions for shared code
 
-
   # UI Development
 
   - SwiftUI first, UIKit when needed
