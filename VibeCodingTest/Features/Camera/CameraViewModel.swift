@@ -139,7 +139,7 @@ class CameraViewModel: NSObject, ObservableObject {
     }
 }
 
-extension CameraViewModel: AVCapturePhotoCaptureDelegate {
+extension CameraViewModel: @preconcurrency AVCapturePhotoCaptureDelegate {
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         if let error = error {
             logger.error("Error capturing photo: \(error.localizedDescription)")

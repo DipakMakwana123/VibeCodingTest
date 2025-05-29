@@ -6,30 +6,59 @@
 //
 
 import SwiftUI
+import os.log
 
 struct ContentView: View {
     @State private var selectedTab = 0
+    private let logger = Logger(subsystem: "com.vibe.foodcalories", category: "ContentView")
     
-    // Replace with your actual OpenAI API key
-    private let openAIApiKey = "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"
+    private var openAIApiKey: String {
+        do {
+            return try ConfigurationManager.shared.openAIAPIKey
+        } catch {
+            logger.error("Failed to get OpenAI API key: \(error.localizedDescription)")
+            return ""
+        }
+    }
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            // Camera Tab
-            NavigationView {
-                CameraView(apiKey: openAIApiKey)
-            }
-            .tabItem {
-                Label("Camera", systemImage: "camera")
-            }
-            .tag(0)
-            
-            // History Tab
-            HistoryView()
-                .tabItem {
-                    Label("History", systemImage: "calendar")
+        ZStack {
+            TabView(selection: $selectedTab) {
+                // Camera Tab
+                NavigationView {
+                    if openAIApiKey.isEmpty {
+                        if #available(iOS 17.0, *) {
+                            ContentUnavailableView(
+                                "API Key Missing",
+                                systemImage: "exclamationmark.triangle",
+                                description: Text("Please add your OpenAI API key to Config.plist")
+                            )
+                        } else {
+                            Color(UIColor.systemBackground)
+                                .overlay(
+                                    ToastView(
+                                        message: "API Key Missing",
+                                        systemImage: "exclamationmark.triangle",
+                                        description: "Please add your OpenAI API key to Config.plist"
+                                    )
+                                )
+                        }
+                    } else {
+                        CameraView(apiKey: openAIApiKey)
+                    }
                 }
-                .tag(1)
+                .tabItem {
+                    Label("Camera", systemImage: "camera")
+                }
+                .tag(0)
+                
+                // History Tab
+                HistoryView()
+                    .tabItem {
+                        Label("History", systemImage: "calendar")
+                    }
+                    .tag(1)
+            }
         }
     }
 }
