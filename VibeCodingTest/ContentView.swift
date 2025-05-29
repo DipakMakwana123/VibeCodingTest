@@ -6,16 +6,39 @@
 //
 
 import SwiftUI
+import os
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+    @State private var selectedTab = 0
+    
+    private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "VibeCodingTest", category: "ContentView")
+    
+    private var openAIApiKey: String {
+        guard let apiKey = ProcessInfo.processInfo.environment["OPENAI_API_KEY"] else {
+            logger.error("OpenAI API key not found in environment variables")
+            return ""
         }
-        .padding()
+        return apiKey
+    }
+    
+    var body: some View {
+        TabView(selection: $selectedTab) {
+            // Camera Tab
+            NavigationView {
+                CameraView(apiKey: openAIApiKey)
+            }
+            .tabItem {
+                Label("Camera", systemImage: "camera")
+            }
+            .tag(0)
+            
+            // History Tab
+            HistoryView()
+                .tabItem {
+                    Label("History", systemImage: "calendar")
+                }
+                .tag(1)
+        }
     }
 }
 
