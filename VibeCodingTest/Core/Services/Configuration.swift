@@ -18,7 +18,7 @@ enum Configuration {
         }
     }
     
-    static func validateOpenAIAPIKey() throws -> String {
+    static func validOpenAIAPIKey() throws -> String {
         guard let apiKey = Bundle.main.object(forInfoDictionaryKey: "OPENAI_API_KEY") as? String else {
             throw Error.missingKey("OPENAI_API_KEY")
         }

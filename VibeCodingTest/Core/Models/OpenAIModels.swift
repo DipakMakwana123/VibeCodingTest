@@ -6,17 +6,11 @@ struct OpenAIRequest: Codable {
     let messages: [Message]
     let maxTokens: Int
     let temperature: Double
-    let topP: Double
-    let frequencyPenalty: Double
-    let presencePenalty: Double
     
     enum CodingKeys: String, CodingKey {
         case model, messages
         case maxTokens = "max_tokens"
         case temperature
-        case topP = "top_p"
-        case frequencyPenalty = "frequency_penalty"
-        case presencePenalty = "presence_penalty"
     }
 }
 
@@ -38,7 +32,7 @@ struct Content: Codable {
 
 struct ImageURL: Codable {
     let url: String
-    let detail: String
+    let detail: String?
 }
 
 // MARK: - Response Models
@@ -46,11 +40,7 @@ struct ImageURL: Codable {
 //    let choices: [Choice]
 //    
 //    struct Choice: Codable {
-//        let message: ResponseMessage
-//    }
-//    
-//    struct ResponseMessage: Codable {
-//        let content: String
+//        let message: Message
 //    }
 //}
 
@@ -93,10 +83,7 @@ extension OpenAIRequest {
             model: "gpt-4-vision-preview",
             messages: [message],
             maxTokens: 1000,
-            temperature: 0.7,
-            topP: 1.0,
-            frequencyPenalty: 0.0,
-            presencePenalty: 0.0
+            temperature: 0.7
         )
     }
 } 

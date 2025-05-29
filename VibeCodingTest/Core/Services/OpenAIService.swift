@@ -5,9 +5,16 @@ actor OpenAIService {
     private let baseURL = "https://api.openai.com/v1/chat/completions"
     private let apiVersion = "2024-03-01"  // Latest API version
     
+    private enum Endpoint {
+        static let vision = "https://api.openai.com/v1/chat/completions"
+        static let imageAnalysis = "https://api.openai.com/v1/vision/analysis"
+        static let imageEdit = "https://api.openai.com/v1/vision/edit"
+        static let imageGeneration = "https://api.openai.com/v1/vision/generate"
+    }
+    
     init() throws {
         // Read API key from Config.xcconfig
-        self.apiKey = try Configuration.validateOpenAIAPIKey()
+        self.apiKey = try Configuration.validOpenAIAPIKey()
         print("OpenAIService initialized with API key configuration")
     }
     
@@ -20,7 +27,7 @@ actor OpenAIService {
         // Create request payload using model
         let request = OpenAIRequest.createFoodAnalysisRequest(imageBase64: base64Image)
         
-        var urlRequest = URLRequest(url: URL(string: baseURL)!)
+        var urlRequest = URLRequest(url: URL(string: Endpoint.vision)!)
         urlRequest.httpMethod = "POST"
         urlRequest.addValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         urlRequest.addValue("application/json", forHTTPHeaderField: "Content-Type")
